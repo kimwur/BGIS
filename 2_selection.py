@@ -74,6 +74,8 @@ for c in range(total_cells):
 # BGI Selection 
 # Multifunctional index 1,median
 mfi_1_selection = np.zeros(total_cells) - 1
+mfi_1_Qimpact = np.zeros(total_cells)
+mfi_1_Timpact = np.zeros(total_cells)
 
 for c in range(total_cells):
     mfi_1_mat = np.zeros([total_cells,nbgi])
@@ -82,11 +84,16 @@ for c in range(total_cells):
         use_area = applicable_area[c,j]
         if use_area > 0:
             Q_1_ind = use_area/cell_area * Qred_arr[j]/np.median(Qred_arr)
+            Qele = use_area * Qred_arr[j]
             T_1_ind = use_area/cell_area * Tred_arr[j]/np.median(Tred_arr)
+            Tele = use_area * Tred_arr[j]
             mfi_1 = Q_1_ind + T_1_ind
             mfi_1_mat[c,j] = mfi_1
     if any(mfi_1_mat[c,:]) > 0:
-        mfi_1_selection[c] = np.argmax(mfi_1_mat[c,:])
+        selected_index = np.argmax(mfi_1_mat[c,:])
+        mfi_1_selection[c] = selected_index
+        mfi_1_Qimpact[c] = applicable_area[c, selected_index] * Qred_arr[selected_index]
+        mfi_1_Timpact[c] = applicable_area[c, selected_index] * Tred_arr[selected_index]
 
 selection_mat = np.hstack((maxQ_selection.reshape(-1, 1), \
 maxT_selection.reshape(-1, 1), mfi_1_selection.reshape(-1, 1)))
