@@ -1,0 +1,34 @@
+# available blue-green infrastructure/nature-based solutions 
+types_bgi = ['ret_pon',               # 1 - retention pond
+            'per_pav_dec',            # 2 - permeable pavement
+            'wat_squ',                # 3 - water square
+            'inf_cra',                # 4 - infiltration crate
+            'gre_roo',                # 5 - green roof
+            'urb_tre_gg',             # 6 - urban tree on green ground
+            'urb_tre_pa',             # 7 - urban tree on pavement
+            'rai_gar',                # 8 - rain garden
+            'park']                   # 9 - park
+
+
+# characteristics of each BGI
+bgi_characteristics_matrix = np.array([
+#   1     2       3       4       5      6      7      8      9        
+[0.75,    0.2,    1.0,    0.9,   0.05,   0.2,   0.1,  0.4,  0.2],      # retention capacity (m per m2 area)
+[ 2.0,    1.0,    2.0,    0,      2,     10,    10,   2.7,  2.5],      # cooling (deg C per m2 area)
+[ 30,     50,    300,    50,     100,    300,  600,   70,   200],      # CAPEX (initial set up cost)
+[  3,     2,      8,      1,      5,     15,    20,    4,    10],      # OPEX (annual operating cost)
+[ 100,    0,     200,     0,     20,     10,     5,   10,   500],      # min area of application 
+[  0,     0,      0,      0,      0,      0,     0,    0,     0],      # max area of application
+[  4,     2,      3,      5,      5,      7,     4,    5,     8]])     # max slope category (level)
+
+# slope information 
+# levels -> categories -> max angles
+# L0 =  nearly level = 1
+# L1 = very gentle = 3
+# L2 = gentle = 5
+# L3 = moderate = 10
+# L4 = strong = 15
+# L5 = very strong = 25
+# L6 = steep = 35
+# L7 = very steep = 45
+# L8 = extreme = above 45
