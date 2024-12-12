@@ -12,7 +12,7 @@ you can altar properties of BGIs and landcover in the text files, bgi_informatio
 run **1_feasibility.py** (which includes step 0_land_analysis within it)
   within this script are functions for running constraints based on landcover type, minimum area requirements, and slope requirements.
 
-  this will save a text file named **"output_matrix.txt"** where the first column is the cell ID number (corresponding to the .shp file). The following columns have a value of 0 (not feasible) and 1 (feasible) for each BGI. BGI columns correspond to the order of BGI listed in the bgi_information.txt file. 
+  this will save a text file named **output_matrix.txt** where the first column is the cell ID number (corresponding to the .shp file). The following columns have a value of 0 (not feasible) and 1 (feasible) for each BGI. BGI columns correspond to the order of BGI listed in the bgi_information.txt file. 
 
 **Step 2**
 
@@ -27,3 +27,12 @@ run **2_selection.py**
 
 Values of -1 indicate no BGI installation is possible due to physical constraints from step 1.    
 Selected BGI will be in an index of 0 to 8 following the order listed in the bgi_information.txt file. 
+
+**Step 3**
+
+upload selection_matrix.txt to GIS and join it to the shapefile. you may want to add headers to the textfile first so it will be easier for you to identify columns in GIS. you can then view BGI selection depending on objective. 
+
+the current result is not very polished but it is getting there. it is also not very flexible, so errors will arise if formatting is not what the script is expecting.
+
+please email with questions and comments
+kim.wang@wur.nl
