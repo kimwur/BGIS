@@ -1,0 +1,86 @@
+##### PACKAGES TO IMPORT 
+import pandas as pd
+import numpy as np
+from matplotlib import pyplot as plt
+
+##### LOAD: 
+# data about your land parcels 
+# see "sample_land_data_txt" : should be 3 columns of [cell id number]  [area]  [landcover]
+land_data_filename = 'sample_land_data.txt'                                                            # replace with your own file name 
+land_data_df = pd.read_csv(land_data_filename, sep="\t", header=0, names=["ID", "area", "landcover"])  # transforms text into pandas dataframe
+land_data_df["area"] = np.where(land_data_df["area"] == 0, np.finfo(float).eps, land_data_df["area"])  # replace any absolute 0s in area 
+land_data_dict = land_data_df.set_index('ID').to_dict(orient='index')                                  # transforms dataframe into dictionary 
+
+##### LOAD: 
+# information and characteristics of currently considered BGIs 
+# make sure all the information is in the same order of BGIs 
+bgi_data_filename = 'dataframes.txt'                            # customize dataframes.txt as needed 
+with open(bgi_data_filename) as file:
+    exec(file.read())                    
+
+##### LOAD: 
+# information about landcover x BGI feasibility
+# each landcover has an array of 0/1 indicating if the BGI can (1) or cannot (0) be installed on that landcover
+bgi_landcover_dict = landcover_df.to_dict(orient='list')  
+
+##### DEFINITION: 
+# basic parameters 
+cell_ids = list(land_data_dict.keys())
+ncell = len(cell_ids)
+landcover_set = list(landcover_df.keys())
+nbgi = bgi_df.shape[0]
+q_arr = np.array(list(bgi_df['retention_capacity']))
+t_arr = np.array(list(bgi_df['cooling_ability']))
+capex_arr = bgi_df['CAPEX'].to_numpy()
+
+##### DEFINITION: 
+# normalization of Q and T effects for later MFI calculation
+minmax_Q = np.array([(i - np.min(q_arr))/(np.max(q_arr) - np.min(q_arr)) for i in q_arr])
+minmax_T = np.array([(i - np.min(t_arr))/(np.max(t_arr) - np.min(t_arr)) for i in t_arr])
+
+##### FUNCTION: FEASIBILITY 
+# considers the landcover of the cell as well as the minimum area needed
+
+def FEASIBILITY(cell_array):
+    n_array = len(cell_array)
+    feasibility_matrix = np.zeros((len(cell_array), nbgi), dtype=int)
+    for idx, cell in enumerate(cell_array):
+        if cell not in land_data_dict:
+            print(f'cell {cell} not found')
+            continue
+        cell_data = land_data_dict[cell]
+        cell_landcover = cell_data['landcover']
+        cell_area = cell_data['area']
+        if cell_landcover not in bgi_landcover_dict:
+            print(cell_landcover, 'not found. see cell', cell)
+            continue 
+        landcover_feasibility = bgi_landcover_dict[cell_landcover]
+        min_area_feasibility = np.where(bgi_df['min_area'] > cell_area, 0, 1)
+        feasibility_array = np.minimum(landcover_feasibility, min_area_feasibility)
+        feasibility_matrix[idx] = feasibility_array
+    return(feasibility_matrix)
+
+# run function over all cells
+all_feasibility = FEASIBILITY(cell_ids) 
+# all_feasibility is a 0/1 matrix where BGIs can (1) or cannot (0) be installed 
+# the order of BGIs will match the bgi labels order of your input file
+
+##### FUNCTION: SELECTION OF BGI 
+# currently using weighting between 0 and 1 to show priority towards Q or T as your goal
+# wQ + wT = 1 is a requirement
+
+def SELECTION_AT_CELL(cell, wQ):
+    wT = 1 - wQ
+    feasibility = FEASIBILITY([cell])[0] 
+    selected_bgi = -1
+    cell_data = land_data_dict[cell]
+    cell_area = cell_data['area']
+    norm_q = minmax_Q * feasibility
+    norm_t = minmax_T * feasibility
+    MFI = wQ * cell_area * norm_q + wT * cell_area * norm_t
+    if np.sum(MFI) > 0: 
+        selected_bgi = np.argmax(MFI)
+    return selected_bgi 
+
+# given a cell ID and your weight (wQ), returns best BGI for that cell 
+
