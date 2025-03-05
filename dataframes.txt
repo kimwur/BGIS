@@ -1,0 +1,42 @@
+# BGI INFORMATION 
+bgi_characteristics = {
+'bgi_full_name': ['retention pond', 'permeable pavement centralized', 'permeable pavement decentralized', 
+        'water square', 'infiltration crate', 'rain barrel', 'green roof', 'urban tree on green', 
+        'urban tree on pavement', 'rain garden', 'park', 'facade garden'],
+
+'bgi_label': ['ret_pon', 'per_pav_dec', 'per_pav_cen', 'wat_squ', 'inf_cra', 'rai_bar', 'gre_roo', 'urb_tre_gg', 'urb_tre_pa', 'rai_gar', 'park', 'fac_gar'],
+
+# change values in this table to what is best for your region 
+# retention capacity is in m3
+# cooling ability is deg C over an area of 1 m2
+#                      RP0   PP1   PP2   WS3   IC4   RB5   GR6    UT7   UT8    RG9   PA10   FG
+'retention_capacity': [0.75, 0.15, 0.15, 1.0,  0.6,  1.0,  0.05,  0.1,  0.05,  0.4,  0.1,  0.0],
+'cooling_ability':    [1.5,  1.5,  1.5,  2.0,  0.0,  0.0,  2.0,   8.0,  5.0,   2.5,  3.0,  0.0],
+'CAPEX':              [150,  120,  120,  250,  400,  500,  150,   500,  1000,  100,  100,  300],
+'OPEX':               [10,     5,    5,   15,   2,     5,    5,    20,   30,    3,    5,    10],
+'min_area':           [50,     1,    1,  100,   5,   0.0,    5,    10,    5,    5,   100, -999],
+'max_area':           [0.0,  0.0,  0.0,  0.0, 0.0,   0.0,  0.0,   0.0,  0.0,  0.0,   0.0, -999],
+}
+bgi_df = pd.DataFrame(bgi_characteristics)
+
+# LANDCOVER labels x FEASIBILITY
+landcover_feasibility = {
+#                 RP PP PP WS IC RB GR UT UT RG PA FG
+    'flat roof':  [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], 
+    'steep roof': [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+    'building':   [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], 
+    'facade':     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'road':       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'parking':    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'forest':     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'grass':      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
+    'greenery':   [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
+    'paved area': [0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0],
+    'half-paved': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'unpaved':    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'water':      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    'other':      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+}
+landcover_df = pd.DataFrame(landcover_feasibility)
+
+landcover_RC = [0.75, 0.75 ,0.75, 0.70, 0.70, 0.70, 0.10, 0.05, 0.10, 0.70, 0.55, 0.25, 0.00, 0.00]
