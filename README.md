@@ -1,38 +1,20 @@
 # ongoing project for Blue-Green Infrastructure
 
-**format data** 
+Currently, the script runs on information uploaded from 2 files
 
-enter data following format of sample data text - each row corresponds with a land parcel saved in a shapefile (.shp) for use in GIS
+"sample_land_data.txt"
+-- contains information in three columns with a header. 
+ID refers to an identifying number corresponding to a land parcel. 
+Area is in m2. 
+Landcover usage needs to be determined prior to running this script. 
 
-you can altar properties of BGIs and landcover in the text files, bgi_information.txt and landcover_information
-   bgi_information includes 9 possible BGI types
+"dataframes.txt"
+-- contains information about some BGIs that target increasing retention capacity of stormwater or cooling the temperature
+bgi_characteristics is a dictionary. bgi_df is the panda dataframes format of the dictionary. 
+the order of bgis labeled here indicate how you should input matrices/arrays for the bgi dictionary/dataframe 
 
-**Step 1**
-
-run **1_feasibility.py** (which includes step 0_land_analysis within it)
-  within this script are functions for running constraints based on landcover type, minimum area requirements, and slope requirements.
-
-  this will save a text file named **output_matrix.txt** where the first column is the cell ID number (corresponding to the .shp file). The following columns have a value of 0 (not feasible) and 1 (feasible) for each BGI. BGI columns correspond to the order of BGI listed in the bgi_information.txt file. 
-
-**Step 2**
-
-run **2_selection.py**
-   includes an idea for maximum area constraints which is currently unfinished.
-
-   this will save a text file named **selection_matrix.txt** where the first column is the cell ID number (corresponding to the .shp file). The following columns have the selected BGI that is best suited for the objective where
-
-   Column 2 = objective of maximizing retention capacity
-   Column 3 = objective of maximizing temperature reduction
-   Column 4 = objective of selecting the BGI that provides the most multifunctionality (of the two goals above)
-
-Values of -1 indicate no BGI installation is possible due to physical constraints from step 1.    
-Selected BGI will be in an index of 0 to 8 following the order listed in the bgi_information.txt file. 
-
-**Step 3**
-
-upload selection_matrix.txt to GIS and join it to the shapefile. you may want to add headers to the textfile first so it will be easier for you to identify columns in GIS. you can then view BGI selection depending on objective. 
+The code to check for suitability based on landcover and minimum area needed per BGI is in "feasibility_script.py"
 
 the current result is not very polished but it is getting there. it is also not very flexible, so errors will arise if formatting is not what the script is expecting.
-
 please email with questions and comments
 kim.wang@wur.nl
