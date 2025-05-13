@@ -6,16 +6,18 @@ bgi_characteristics = {
 
 'bgi_label': ['ret_pon', 'per_pav_dec', 'per_pav_cen', 'wat_squ', 'inf_cra', 'rai_bar', 'gre_roo', 'urb_tre_gg', 'urb_tre_pa', 'rai_gar', 'park', 'fac_gar'],
 
-# change values in this table to what is best for your region 
-# retention capacity is in m3
-# cooling ability is deg C over an area of 1 m2
-#                      RP0   PP1   PP2   WS3   IC4   RB5   GR6    UT7   UT8    RG9   PA10   FG
-'retention_capacity': [0.75, 0.15, 0.15, 1.0,  0.6,  1.0,  0.05,  0.1,  0.05,  0.4,  0.1,  0.0],
+#                      RP0   PP1   PP2   WS3   IC4   RB5   GR6    UT7   UT8    RG9   PA10   FG11
+'retention_capacity': [0.75, 0.15, 0.15, 1.3,  0.6,  1.0,  0.05,  0.05,  0.03, 0.4,  0.3,  0.0],
 'cooling_ability':    [1.5,  1.5,  1.5,  2.0,  0.0,  0.0,  2.0,   8.0,  5.0,   2.5,  3.0,  0.0],
 'CAPEX':              [150,  120,  120,  250,  400,  500,  150,   500,  1000,  100,  100,  300],
 'OPEX':               [10,     5,    5,   15,   2,     5,    5,    20,   30,    3,    5,    10],
-'min_area':           [50,     1,    1,  100,   5,   0.0,    5,    10,    5,    5,   100, -999],
-'max_area':           [0.0,  0.0,  0.0,  0.0, 0.0,   0.0,  0.0,   0.0,  0.0,  0.0,   0.0, -999],
+
+'min_area':           [500,    1,    1,    100,   1,  1,    5,     25,   10,    5,   100,  -999],
+'max_area':           [20000, 5000, 5000, 10000,  0,  5,  10000,    0,   0,   200,    0,   -999],
+# currently limiting to 5 rain barrels regardless of area
+
+'pub/priv':           [1, 1, 1, 1, 1, -999, 0, 1, 1, 1, 1, -999],
+'cent/de-cent':       [1, 1, 1, 1, 0, -999, 0, 0, 0, 0, 1, -999]
 }
 bgi_df = pd.DataFrame(bgi_characteristics)
 
