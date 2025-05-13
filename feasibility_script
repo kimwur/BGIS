@@ -3,13 +3,26 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 
+
+
+
 ##### LOAD: 
 # data about your land parcels 
-# see "sample_land_data_txt" : should be 3 columns of [cell id number]  [area]  [landcover]
-land_data_filename = 'sample_land_data.txt'                                                            # replace with your own file name 
-land_data_df = pd.read_csv(land_data_filename, sep="\t", header=0, names=["ID", "area", "landcover"])  # transforms text into pandas dataframe
-land_data_df["area"] = np.where(land_data_df["area"] == 0, np.finfo(float).eps, land_data_df["area"])  # replace any absolute 0s in area 
-land_data_dict = land_data_df.set_index('ID').to_dict(orient='index')                                  # transforms dataframe into dictionary 
+# see "sample_land_data_txt" : should be 3 columns of [cell id number]  [area]  [landcover]                                                           
+# replace with your own file name 
+land_data_filename = 'sample_land_data.txt' 
+
+# transforms text into pandas dataframe
+land_data_df = pd.read_csv(land_data_filename, sep="\t", header=0, names=["ID", "area", "landcover"])  
+
+ # replace any absolute 0s in area 
+land_data_df["area"] = np.where(land_data_df["area"] == 0, np.finfo(float).eps, land_data_df["area"]) 
+
+ # transforms dataframe into dictionary 
+land_data_dict = land_data_df.set_index('ID').to_dict(orient='index')                                 
+
+
+
 
 ##### LOAD: 
 # information and characteristics of currently considered BGIs 
@@ -18,41 +31,83 @@ bgi_data_filename = 'dataframes.txt'                            # customize data
 with open(bgi_data_filename) as file:
     exec(file.read())                    
 
+
+
+
 ##### LOAD: 
 # information about landcover x BGI feasibility
 # each landcover has an array of 0/1 indicating if the BGI can (1) or cannot (0) be installed on that landcover
 bgi_landcover_dict = landcover_df.to_dict(orient='list')  
 
+
+
+
 ##### DEFINITION: 
 # basic parameters 
 cell_ids = list(land_data_dict.keys())
 ncell = len(cell_ids)
+cell_areas = np.array([land_data_dict[cell]['area'] for cell in cell_ids])  
 landcover_set = list(landcover_df.keys())
 nbgi = bgi_df.shape[0]
-q_arr = np.array(list(bgi_df['retention_capacity']))
-t_arr = np.array(list(bgi_df['cooling_ability']))
-capex_arr = bgi_df['CAPEX'].to_numpy()
 
-##### DEFINITION: 
-# normalization of Q and T effects for later MFI calculation
-minmax_Q = np.array([(i - np.min(q_arr))/(np.max(q_arr) - np.min(q_arr)) for i in q_arr])
-minmax_T = np.array([(i - np.min(t_arr))/(np.max(t_arr) - np.min(t_arr)) for i in t_arr])
+
+
+# selecting max between area used and possible area of application of BGI
+bgi_max_area = bgi_df['max_area'].to_numpy()
+valid_max_area_mask = bgi_max_area > 0
+use_area = np.minimum(cell_areas[:, None], bgi_max_area[None, :])  # change into shape (ncell, nbgi)
+use_area[:, ~valid_max_area_mask] = cell_areas[:, None] # shape (ncell, nbgi)
+
+
+
+# this is for how the MFI is calculated later
+median_q = np.median(q_arr[q_arr>0])
+median_t = np.median(t_arr[t_arr>0])
+norm_Q = np.array([i/median_q for i in q_arr])
+norm_T = np.array([i/median_t for i in t_arr])
+
+
+
+##### FUNCTION: FILTER
+# input = array of cell ID numbers
+# ex: [1002, 1004, 1005, 1009]
+# function checks them against the cell data it has loaded
+# it returns only cell ID numbers that are in the data text
+# ex: if 1009 is not a cell ID in your text, only [1002, 1004, 1005] will be returned as "valid subset_cells"
+# and the row number they can be found at in the land_data_dict
+# you don't really need to worry about this function, it is just called on and used in another function
+
+def FILTER(subset_cell_ids):
+    subset_index = []
+    valid_subset_cells = []
+    for c in subset_cell_ids:
+        if c in cell_ids:
+            subset_index.append(cell_ids.index(c))
+            valid_subset_cells.append(c)
+        else:
+            continue
+    return subset_index, valid_subset_cells
+
+
+
 
 ##### FUNCTION: FEASIBILITY 
-# considers the landcover of the cell as well as the minimum area needed
+# input = array of cell ID numbers
+# ex: [1002, 1004, 1005]
+# function finds which BGI can be applied based on landcover and minimum area required
+# where 1 means it can be installed and 0 means it cannot be installed
+# the order of BGIs will match the bgi labels order of your input file
 
-def FEASIBILITY(cell_array):
-    n_array = len(cell_array)
-    feasibility_matrix = np.zeros((len(cell_array), nbgi), dtype=int)
-    for idx, cell in enumerate(cell_array):
-        if cell not in land_data_dict:
-            print(f'cell {cell} not found')
-            continue
-        cell_data = land_data_dict[cell]
+def FEASIBILITY(cell_ids_array):
+    valid_cell_index, valid_cell_ids = FILTER(cell_ids_array)
+    n_valid_array = len(valid_cell_index)
+    feasibility_matrix = np.zeros((n_valid_array, nbgi), dtype=int)
+    for idx, cell_id in enumerate(valid_cell_ids):
+        cell_data = land_data_dict[cell_id]
         cell_landcover = cell_data['landcover']
         cell_area = cell_data['area']
         if cell_landcover not in bgi_landcover_dict:
-            print(cell_landcover, 'not found. see cell', cell)
+            print(cell_landcover, 'not found. see cell', cell_id)
             continue 
         landcover_feasibility = bgi_landcover_dict[cell_landcover]
         min_area_feasibility = np.where(bgi_df['min_area'] > cell_area, 0, 1)
@@ -60,27 +115,52 @@ def FEASIBILITY(cell_array):
         feasibility_matrix[idx] = feasibility_array
     return(feasibility_matrix)
 
-# run function over all cells
-all_feasibility = FEASIBILITY(cell_ids) 
-# all_feasibility is a 0/1 matrix where BGIs can (1) or cannot (0) be installed 
-# the order of BGIs will match the bgi labels order of your input file
+
+
+
 
 ##### FUNCTION: SELECTION OF BGI 
-# currently using weighting between 0 and 1 to show priority towards Q or T as your goal
-# wQ + wT = 1 is a requirement
+# input: subset_cells is an array of cell ID numbers
+# ex: [1002, 1003, 1004, 1005]
+# options are for weights of how important Q and T are relative to each other
+# if no weights are entered, equal weight is assumed
+# option for budget to be considered as well as a maximum cost
 
-def SELECTION_AT_CELL(cell, wQ):
-    wT = 1 - wQ
-    feasibility = FEASIBILITY([cell])[0] 
-    selected_bgi = -1
-    cell_data = land_data_dict[cell]
-    cell_area = cell_data['area']
-    norm_q = minmax_Q * feasibility
-    norm_t = minmax_T * feasibility
-    MFI = wQ * cell_area * norm_q + wT * cell_area * norm_t
-    if np.sum(MFI) > 0: 
-        selected_bgi = np.argmax(MFI)
-    return selected_bgi 
 
-# given a cell ID and your weight (wQ), returns best BGI for that cell 
+def OPTIMIZATION(subset_cells, wQ = 1, wT = 1, budget=None):
+    valid_subset_index, valid_subset_cells = FILTER(subset_cells)
+    nsubset = len(valid_subset_index)
+    selected_bgi = {}
+    model = LpProblem("BGI_Selection", LpMaximize)
+    x = [[LpVariable(f"x_{i}_{j}", cat=LpBinary) for j in range(nbgi)] for i in range(nsubset)]
+    model += lpSum(x[i][j] * use_area[valid_subset_index[i],j] * (wQ * norm_Q[j] + wT * norm_T[j])
+               for i in range(nsubset)
+               for j in range(nbgi)
+               if feasibility_matrix[valid_subset_index[i],j])
+    for i in range(nsubset):
+        model += lpSum(x[i][j] for j in range(nbgi) if feasibility_matrix[valid_subset_index[i], j]) <= 1
+    for i in range(nsubset):
+        for j in range(nbgi):
+            if not feasibility_matrix[valid_subset_index[i], j]:
+                model += x[i][j] == 0
+    if budget is not None:
+        model += lpSum(
+            x[i][j] * cap_matrix[valid_subset_index[i], j]
+            for i in range(nsubset)
+            for j in range(nbgi)
+            if feasibility_matrix[valid_subset_index[i], j]
+        ) <= budget
+    model.solve()
+    if model.status == 1:  # 1 means optimal solution
+        for i in range(nsubset):
+            for j in range(nbgi):
+                if pulp.value(x[i][j]) == 1:
+                    selected_bgi[valid_subset_cells[i]] = j
+    else:
+        print("optimal solution not reached")
+        selected_bgi = {}
+    return selected_bgi
 
+
+# given a cell ID, returns best BGI for that cell 
+# if no BGI is selected, the function will return -1
