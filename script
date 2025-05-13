@@ -1,8 +1,12 @@
 ##### PACKAGES TO IMPORT 
 import pandas as pd
 import numpy as np
-from matplotlib import pyplot as plt
-
+import scipy
+import pulp
+from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD, LpBinary
+import sys
+import random
+import csv 
 
 
 
@@ -164,3 +168,4 @@ def OPTIMIZATION(subset_cells, wQ = 1, wT = 1, budget=None):
 
 # given a cell ID, returns best BGI for that cell 
 # if no BGI is selected, the function will return -1
+
