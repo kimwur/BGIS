@@ -1,0 +1,179 @@
+bgi_simple_impact = {
+'permeable pavement': {
+    'retention': 0.1,
+    'RC': 0.6,
+    'cooling': 0.3,
+    'capex': 80,
+    'opex %': 0.04
+},
+
+'infiltration crate': {
+    'retention': 1.1,
+    'RC': 0.65,
+    'cooling': None,
+    'capex': 180,
+    'opex %':  0.09
+},
+
+'rain garden': {
+    'retention': 0.2,
+    'RC': 0.25,
+    'cooling': 0.8,
+    'capex': 100,
+    'opex %': 0.05
+},
+
+'infiltration basin':{
+    'retention': 0.8,
+    'RC': 0.1,
+    'cooling': 0.8,
+    'capex': 120,
+    'opex %': 0.04
+},
+
+'infiltration well':{
+    'retention': 1,
+    'RC': 0.1,
+    'cooling': 0.1,
+    'capex': 200,
+    'opex %': 0.1
+},
+
+'infiltration trench':{
+    'retention': 0.5,
+    'RC': 0.1,
+    'cooling': 0.6,
+    'capex': 150,
+    'opex %': 0.06
+},
+
+'swale':{
+    'retention': 0.35,
+    'RC': 0.2,
+    'cooling': 0.9,
+    'capex': 90,
+    'opex %': 0.03
+},
+
+'channel':{
+    'retention': 0.25,
+    'RC': 0.25,
+    'cooling': 0.1,
+    'capex': 100,
+    'opex %': 0.04
+},
+
+'dry pond':{
+    'retention': 0.8,
+    'RC': 0.3,
+    'cooling': 0.7,
+    'capex': 130,
+    'opex %': 0.05
+},
+
+'wet pond':{
+    'retention': 1,
+    'RC': 0.1,
+    'cooling': 1.1,
+    'capex': 160,
+    'opex %': 0.06
+}, 
+
+'water square':{
+    'retention': 0.5,
+    'RC': 0.35,
+    'cooling': 1.2,
+    'capex': 250,
+    'opex %': 0.07
+},
+
+'wetland':{
+    'retention': 0.65,
+    'RC': 0.1,
+    'cooling': 2,
+    'capex': 200,
+    'opex %': 0.06
+},
+
+'tree':{
+    'retention': 0.05,
+    'RC': 0.5,
+    'cooling': 2.3,
+    'capex': 800,
+    'opex': 40
+},
+
+'tree trench':{
+    'retention': 0.2,
+    'RC': 0.4,
+    'cooling': 2.2,
+    'capex': 1000,
+    'opex': 45
+}, 
+    
+
+'vegetation strip':{
+    'retention': 0.05,
+    'RC': 0.3,
+    'cooling': 0.9,
+    'capex': 60,
+    'opex %': 0.02
+},
+
+'park':{
+    'retention': 0.07,
+    'RC': 0.15,
+    'cooling': 2.6,
+    'capex': 70,
+    'opex %': 0.03
+}, 
+
+'forest': {
+    'retention': 0.1,
+    'RC': 0.1,
+    'cooling': 4,
+    'capex': 40, 
+    'opex %': 0.02
+}, 
+
+'green wall': {
+    'retention': 0,
+    'RC': 1,
+    'cooling': 0.5,
+    'capex': 300,
+    'opex %': 0.10
+}, 
+
+'green roof': {
+    'retention': 0.08,
+    'RC': 0.9,
+    'cooling': 1,
+    'capex': 250,
+    'opex %': 0.08
+},
+    
+'blue roof': {
+    'retention': 0.1,
+    'RC': 0.85,
+    'cooling': 0.2,
+    'capex': 200,
+    'opex %': 0.05
+},
+    
+'hybrid roof': {
+    'retention': 0.1,
+    'RC': 0.85,
+    'cooling': 0.3,
+    'capex': 280,
+    'opex %': 0.07
+},
+
+'rain storage': {
+    'retention': 0.8,
+    'RC': 0,
+    'cooling': None,
+    'capex': 70,
+    'opex %': 0.07
+}
+}
+        
