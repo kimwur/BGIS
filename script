@@ -1,171 +1,104 @@
-##### PACKAGES TO IMPORT 
+##### packages to import 
+import geopandas as gpd
+import pyogrio
 import pandas as pd
-import numpy as np
-import scipy
-import pulp
-from pulp import LpMaximize, LpProblem, LpVariable, lpSum, PULP_CBC_CMD, LpBinary
-import sys
-import random
-import csv 
+import ast
+
+##### for reading text per word instead of as string 
+def safe_literal_eval(val):
+    if isinstance(val, str):
+        try:
+            return ast.literal_eval(val)
+        except Exception:
+            return val
+    return val
+
+def load_bgi_database(filename):
+    local_vars = {}
+    with open(filename) as f:
+        exec(f.read(), {}, local_vars)
+    return local_vars
+
+# load in BGI database 
+BGI_CATALOG_FILE = 'example_bgi_database.txt'
+catalog_data = load_bgi_database(BGI_CATALOG_FILE)
+bgi_catalog = catalog_data['bgi_catalog']
+slope_categories = catalog_data['slope_categories_max_degree']
+maintenance_categories = catalog_data['maintenance_categories']
+
+# loading in the shapefile 
+# ENTER YOUR SHAPEFILE HERE
+GPKG_FILE='shapefile.gpkg'
+LAYER_NAME = 'feasibility'
+gdf = gpd.read_file(GPKG_FILE, layer=LAYER_NAME, engine='pyogrio')
+
+# mapping dictionaries so landcover input matches BGI catalog
+land_slopes_dictionary = { 'nearly level': 1,
+                           'very gentle slope': 2.5, 
+                           'gentle slope': 5, 
+                           'moderate slope': 10, 
+                           'strong slope': 15,
+                           'very strong slope': 20,
+                           'steep slope': 30,
+                           'very steep slope': 45,  
+                           'extreme slope': 90}
+
+gdf['slope degree'] = gdf['slope'].map(land_slopes_dictionary)
 
 
+landcover_dictionary = { 
+    'other': 'none',
+    'flat roof': 'roof',
+    'water': 'none',
+    'building': 'building',
+    'steep roof': 'none',
+    'road': 'pavement',
+    'parking': 'pavement',
+    'paved area': 'pavement',
+    'half-paved area': 'ground',
+    'unpaved area': 'ground',
+    'greenery': 'ground',
+    'grass': 'ground',
+    'forest': 'none'
+}
 
-##### LOAD: 
-# data about your land parcels 
-# see "sample_land_data_txt" : should be 3 columns of [cell id number]  [area]  [landcover]                                                           
-# replace with your own file name 
-land_data_filename = 'sample_land_data.txt' 
+gdf['basic_lulc'] = gdf['landcover'].map(landcover_dictionary)
 
-# transforms text into pandas dataframe
-land_data_df = pd.read_csv(land_data_filename, sep="\t", header=0, names=["ID", "area", "landcover"])  
+# feasibility check
 
- # replace any absolute 0s in area 
-land_data_df["area"] = np.where(land_data_df["area"] == 0, np.finfo(float).eps, land_data_df["area"]) 
+def feasibility(land_data_file):
+    suitable_bgis = [[] for _ in range(len(land_data_file))]
 
- # transforms dataframe into dictionary 
-land_data_dict = land_data_df.set_index('ID').to_dict(orient='index')                                 
+    cell_lulc = land_data_file['basic_lulc']
+    cell_slope = land_data_file['slope degree'].copy()
+    cell_area = land_data_file['area']
+    cell_slope[cell_lulc == 'roof'] = land_slopes_dictionary['nearly level']
 
+    for bgi_name, bgi in bgi_catalog.items():
+        mask_lulc = cell_lulc.isin(bgi['lulc'])
+        slope_cat = bgi.get('slope_cat')[0]
+        max_bgi_slope_degree = slope_categories.get(slope_cat, float('inf'))
+        mask_slope = cell_slope <= max_bgi_slope_degree
+        min_bgi_area = bgi['area_m2'].get('min', 0)
+        mask_area = (cell_area >= min_bgi_area)
 
+        mask = mask_lulc & mask_slope & mask_area
 
+        for idx in mask[mask].index:
+            suitable_bgis[idx].append(bgi_name)
 
-##### LOAD: 
-# information and characteristics of currently considered BGIs 
-# make sure all the information is in the same order of BGIs 
-bgi_data_filename = 'dataframes.txt'                            # customize dataframes.txt as needed 
-with open(bgi_data_filename) as file:
-    exec(file.read())                    
+    land_data_file['suitable_bgis'] = suitable_bgis
+    return land_data_file
 
+# run function
+feasibility_gdf = feasibility(gdf)
 
+# add binary matrix
+bgi_binary = pd.DataFrame(0, index=feasibility_gdf.index, columns = list(bgi_catalog.keys()))
+for idx, bgis in enumerate(feasibility_gdf['suitable_bgis']):
+    bgi_binary.loc[idx, bgis] = 1
 
+feasibility_gdf = pd.concat([feasibility_gdf, bgi_binary], axis=1)
 
-##### LOAD: 
-# information about landcover x BGI feasibility
-# each landcover has an array of 0/1 indicating if the BGI can (1) or cannot (0) be installed on that landcover
-bgi_landcover_dict = landcover_df.to_dict(orient='list')  
-
-
-
-
-##### DEFINITION: 
-# basic parameters 
-cell_ids = list(land_data_dict.keys())
-ncell = len(cell_ids)
-cell_areas = np.array([land_data_dict[cell]['area'] for cell in cell_ids])  
-landcover_set = list(landcover_df.keys())
-nbgi = bgi_df.shape[0]
-
-
-
-# selecting max between area used and possible area of application of BGI
-bgi_max_area = bgi_df['max_area'].to_numpy()
-valid_max_area_mask = bgi_max_area > 0
-use_area = np.minimum(cell_areas[:, None], bgi_max_area[None, :])  # change into shape (ncell, nbgi)
-use_area[:, ~valid_max_area_mask] = cell_areas[:, None] # shape (ncell, nbgi)
-
-
-
-# this is for how the MFI is calculated later
-median_q = np.median(q_arr[q_arr>0])
-median_t = np.median(t_arr[t_arr>0])
-norm_Q = np.array([i/median_q for i in q_arr])
-norm_T = np.array([i/median_t for i in t_arr])
-
-
-
-##### FUNCTION: FILTER
-# input = array of cell ID numbers
-# ex: [1002, 1004, 1005, 1009]
-# function checks them against the cell data it has loaded
-# it returns only cell ID numbers that are in the data text
-# ex: if 1009 is not a cell ID in your text, only [1002, 1004, 1005] will be returned as "valid subset_cells"
-# and the row number they can be found at in the land_data_dict
-# you don't really need to worry about this function, it is just called on and used in another function
-
-def FILTER(subset_cell_ids):
-    subset_index = []
-    valid_subset_cells = []
-    for c in subset_cell_ids:
-        if c in cell_ids:
-            subset_index.append(cell_ids.index(c))
-            valid_subset_cells.append(c)
-        else:
-            continue
-    return subset_index, valid_subset_cells
-
-
-
-
-##### FUNCTION: FEASIBILITY 
-# input = array of cell ID numbers
-# ex: [1002, 1004, 1005]
-# function finds which BGI can be applied based on landcover and minimum area required
-# where 1 means it can be installed and 0 means it cannot be installed
-# the order of BGIs will match the bgi labels order of your input file
-
-def FEASIBILITY(cell_ids_array):
-    valid_cell_index, valid_cell_ids = FILTER(cell_ids_array)
-    n_valid_array = len(valid_cell_index)
-    feasibility_matrix = np.zeros((n_valid_array, nbgi), dtype=int)
-    for idx, cell_id in enumerate(valid_cell_ids):
-        cell_data = land_data_dict[cell_id]
-        cell_landcover = cell_data['landcover']
-        cell_area = cell_data['area']
-        if cell_landcover not in bgi_landcover_dict:
-            print(cell_landcover, 'not found. see cell', cell_id)
-            continue 
-        landcover_feasibility = bgi_landcover_dict[cell_landcover]
-        min_area_feasibility = np.where(bgi_df['min_area'] > cell_area, 0, 1)
-        feasibility_array = np.minimum(landcover_feasibility, min_area_feasibility)
-        feasibility_matrix[idx] = feasibility_array
-    return(feasibility_matrix)
-
-
-
-
-
-##### FUNCTION: SELECTION OF BGI 
-# input: subset_cells is an array of cell ID numbers
-# ex: [1002, 1003, 1004, 1005]
-# options are for weights of how important Q and T are relative to each other
-# if no weights are entered, equal weight is assumed
-# option for budget to be considered as well as a maximum cost
-
-
-def OPTIMIZATION(subset_cells, wQ = 1, wT = 1, budget=None):
-    valid_subset_index, valid_subset_cells = FILTER(subset_cells)
-    nsubset = len(valid_subset_index)
-    selected_bgi = {}
-    model = LpProblem("BGI_Selection", LpMaximize)
-    x = [[LpVariable(f"x_{i}_{j}", cat=LpBinary) for j in range(nbgi)] for i in range(nsubset)]
-    model += lpSum(x[i][j] * use_area[valid_subset_index[i],j] * (wQ * norm_Q[j] + wT * norm_T[j])
-               for i in range(nsubset)
-               for j in range(nbgi)
-               if feasibility_matrix[valid_subset_index[i],j])
-    for i in range(nsubset):
-        model += lpSum(x[i][j] for j in range(nbgi) if feasibility_matrix[valid_subset_index[i], j]) <= 1
-    for i in range(nsubset):
-        for j in range(nbgi):
-            if not feasibility_matrix[valid_subset_index[i], j]:
-                model += x[i][j] == 0
-    if budget is not None:
-        model += lpSum(
-            x[i][j] * cap_matrix[valid_subset_index[i], j]
-            for i in range(nsubset)
-            for j in range(nbgi)
-            if feasibility_matrix[valid_subset_index[i], j]
-        ) <= budget
-    model.solve()
-    if model.status == 1:  # 1 means optimal solution
-        for i in range(nsubset):
-            for j in range(nbgi):
-                if pulp.value(x[i][j]) == 1:
-                    selected_bgi[valid_subset_cells[i]] = j
-    else:
-        print("optimal solution not reached")
-        selected_bgi = {}
-    return selected_bgi
-
-
-# given a cell ID, returns best BGI for that cell 
-# if no BGI is selected, the function will return -1
-
+# save file
+feasibility_gdf.to_file("feasibility.gpkg", layer="feasibility", driver="GPKG")
