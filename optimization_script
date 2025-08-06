@@ -1,0 +1,111 @@
+# packages to import
+import geopandas as gpd
+import pyogrio
+import pandas as pd
+import numpy as np
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpStatus
+import ast
+import time
+
+# read text as words and not string
+def safe_literal_eval(val):
+    if isinstance(val, str):
+        try:
+            return ast.literal_eval(val)
+        except Exception:
+            return val
+    return val
+
+def load_bgi_database(filename):
+    local_vars = {}
+    with open(filename) as f:
+        exec(f.read(), {}, local_vars)
+    return local_vars
+
+# load information needed
+BGI_CATALOG_FILE = 'example_bgi_database.txt'
+catalog_data = load_bgi_database(BGI_CATALOG_FILE)
+bgi_catalog = catalog_data['bgi_catalog']
+slope_categories = catalog_data['slope_categories_max_degree']
+maintenance_categories = catalog_data['maintenance_categories']
+
+
+IMPACT_DATABASE_FILE = 'example_simple_impact.txt' 
+impact_catalog = load_bgi_database(IMPACT_DATABASE_FILE)
+bgi_simple_impact = impact_catalog['bgi_simple_impact']
+
+
+GPKG_FILE = 'FILENAME_HERE.gpkg'
+GPKG_LAYERS = pyogrio.list_layers(GPKG_FILE)
+LAYER_NAME = 'feasibility'
+gdf = gpd.read_file(GPKG_FILE, layer=LAYER_NAME, engine='pyogrio')
+gdf['suitable_bgis'] = gdf['suitable_bgis'].apply(safe_literal_eval)
+
+# pre-calculating median BGI performance
+retention_arr = np.array([b.get('retention', 0) or 0 for b in bgi_simple_impact.values()])
+median_retention = np.median(retention_arr[retention_arr>0])
+
+cooling_arr = np.array([b.get('cooling', 0) or 0 for b in bgi_simple_impact.values()])
+median_cooling = np.median(cooling_arr[cooling_arr>0])
+
+# pre-calculating max BGI application area
+bgi_max_area = {
+    bgi_name: bgi_catalog[bgi_name]['area_m2'].get('max', float('inf')) or float('inf')
+    for bgi_name in bgi_simple_impact.keys()
+}
+
+area_cap = {
+    (idx, bgi): min(gdf.at[idx, 'area'], bgi_max_area.get(bgi, float('inf')))
+    for idx, row in gdf.iterrows()
+    for bgi in row['suitable_bgis']
+}
+
+# optimization function 
+def run_optimization(weights, max_budget):
+    start_time = time.time()
+    mfi_scores = ( weights['retention'] * retention_arr / median_retention +
+               weights['temp'] * cooling_arr / median_cooling
+             )
+    mfi_dict = dict(zip(bgi_simple_impact.keys(), mfi_scores))
+
+    prob = LpProblem("MFI_Optimization", LpMaximize)
+    variables = {} 
+
+    for idx, bgi in area_cap:
+        var_name = f"x_{idx}_{bgi.replace(' ', '_')}"
+        variables[(idx, bgi)] = LpVariable(var_name, cat='Binary')
+
+    prob += lpSum(
+        variables[(idx, bgi)] * mfi_dict[bgi] * area_cap[(idx, bgi)]
+        for (idx, bgi) in variables)
+
+    for idx in gdf.index:
+        prob += lpSum(
+            variables[(idx, bgi)] for bgi in gdf.at[idx, 'suitable_bgis']
+            if (idx, bgi) in variables) <= 1
+
+    prob += lpSum(
+        variables[(idx, bgi)] * bgi_installation_cost.get(bgi, 0) * area_cap[(idx, bgi)]
+        for (idx, bgi) in variables) <= max_budget
+
+    prob.solve()
+    runtime = time.time() - start_time
+    print(f"status: {LpStatus[prob.status]} in {runtime:.1f} seconds")
+
+    selected_vars = [
+        (idx, bgi) for (idx, bgi), var in variables.items()
+        if var.varValue == 1]
+
+    gdf_result = gdf.copy()
+    gdf_result['selected_bgi'] = None
+    gdf_result['selected_bgi_area'] = 0.0
+
+    for idx, bgi in selected_vars:
+        gdf_result.at[idx, 'selected_bgi'] = bgi
+        gdf_result.at[idx, 'selected_bgi_area'] = area_cap[(idx, bgi)]
+    return gdf_result
+
+# use function
+ex1_weights = {'retention': 1, 'temp': 4}
+ex_max_budget = 10**6
+opt_ex1_weights = run_optimization(ex1_weights, ex_max_budget)
