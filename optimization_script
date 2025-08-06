@@ -106,18 +106,19 @@ def run_optimization(weights, max_budget=None):
     print(mfi_dict)
     return gdf_result
 
-def save_result(gdf_result, weights, filename_prefix):
+def save_result(gdf_result, weights):
     retention_w = weights['retention']
     temp_w = weights['temp']
-    filename = f"{filename_prefix}_r{retention_w}_t{temp_w}.gpkg"
-    layer = f"r{retention_w}_t{temp_w}"
+    filename = f"optimization_results_r{retention_w}_t{temp_w}.gpkg"
+    layer = f"results_r{retention_w}_t{temp_w}"
     gdf_result.to_file(filename, layer=layer, driver='GPKG')
     print(f"Saved to {filename}, layer '{layer}'")
 
 example1_weights = {'retention': 5, 'temp': 1}
 example2_weights = {'retention': 1, 'temp': 5}
+
 ex1_solution_df = run_optimization(example1_weights)
 ex2_solution_df = run_optimization(example2_weights)
 
-save_result(solution_df, {'retention': 5, 'temp': 1}, "opt_result")
-save_result(solution_df, {'retention': 1, 'temp': 5}, "opt_result")
+save_result(ex1_solution_df, {'retention': 5, 'temp': 1})
+save_result(ex2_solution_df, {'retention': 1, 'temp': 5})
