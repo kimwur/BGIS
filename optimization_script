@@ -60,8 +60,7 @@ area_cap = {
     for bgi in row['suitable_bgis']
 }
 
-# optimization function 
-def run_optimization(weights, max_budget):
+def run_optimization(weights, max_budget=None):
     start_time = time.time()
     mfi_scores = ( weights['retention'] * retention_arr / median_retention +
                weights['temp'] * cooling_arr / median_cooling
@@ -84,9 +83,10 @@ def run_optimization(weights, max_budget):
             variables[(idx, bgi)] for bgi in gdf.at[idx, 'suitable_bgis']
             if (idx, bgi) in variables) <= 1
 
-    prob += lpSum(
-        variables[(idx, bgi)] * bgi_installation_cost.get(bgi, 0) * area_cap[(idx, bgi)]
-        for (idx, bgi) in variables) <= max_budget
+    if max_budget is not None: 
+        prob += lpSum(
+            variables[(idx, bgi)] * bgi_installation_cost.get(bgi, 0) * area_cap[(idx, bgi)]
+            for (idx, bgi) in variables) <= max_budget
 
     prob.solve()
     runtime = time.time() - start_time
@@ -103,9 +103,17 @@ def run_optimization(weights, max_budget):
     for idx, bgi in selected_vars:
         gdf_result.at[idx, 'selected_bgi'] = bgi
         gdf_result.at[idx, 'selected_bgi_area'] = area_cap[(idx, bgi)]
+    print(mfi_dict)
     return gdf_result
 
-# use function
-ex1_weights = {'retention': 1, 'temp': 4}
-ex_max_budget = 10**6
-opt_ex1_weights = run_optimization(ex1_weights, ex_max_budget)
+def save_result(gdf_result, weights, filename_prefix):
+    retention_w = weights['retention']
+    temp_w = weights['temp']
+    filename = f"{filename_prefix}_r{retention_w}_t{temp_w}.gpkg"
+    layer = f"r{retention_w}_t{temp_w}"
+    gdf_result.to_file(filename, layer=layer, driver='GPKG')
+    print(f"Saved to {filename}, layer '{layer}'")
+
+example_weights1 = {'retention': 2, 'temp': 1}
+solution_df = run_optimization(ex_weights)
+save_result(solution_df, {'retention': 2, 'temp': 1}, "opt_result")
