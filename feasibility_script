@@ -101,4 +101,4 @@ for idx, bgis in enumerate(feasibility_gdf['suitable_bgis']):
 feasibility_gdf = pd.concat([feasibility_gdf, bgi_binary], axis=1)
 
 # save file
-feasibility_gdf.to_file("feasibility.gpkg", layer="feasibility", driver="GPKG")
+feasibility_gdf.to_file("feasibility_results.gpkg", layer="feasibility", driver="GPKG")
