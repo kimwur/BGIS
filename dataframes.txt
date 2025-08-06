@@ -1,44 +1,364 @@
-# BGI INFORMATION 
-bgi_characteristics = {
-'bgi_full_name': ['retention pond', 'permeable pavement centralized', 'permeable pavement decentralized', 
-        'water square', 'infiltration crate', 'rain barrel', 'green roof', 'urban tree on green', 
-        'urban tree on pavement', 'rain garden', 'park', 'facade garden'],
+bgi_catalog = {
+    
+'permeable pavement': {
+    'lulc' : ['pavement'],
+    'function': ['infiltration', 'retention'],
+    'area_m2': {'min': 5 , 'max': None},
+    'geometry': ['polygon', 'linear'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 0.5, 'max': 1},
+    'groundwater_separation_required_m': {'min': 0.5},
+    'soil_type': ['sand', 'loam'],
+    'maintenance_required': 'low',
+    'pedestrians': True,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'over_slope': ['install berms or use terracing'],
+        'clay_soil': ['install underdrain or outflow pipe'],
+        }
+    },
 
-'bgi_label': ['ret_pon', 'per_pav_dec', 'per_pav_cen', 'wat_squ', 'inf_cra', 'rai_bar', 'gre_roo', 'urb_tre_gg', 'urb_tre_pa', 'rai_gar', 'park', 'fac_gar'],
+'infiltration crate': {
+    'lulc' : ['pavement', 'subsurface'],
+    'function': ['infiltration'],
+    'area_m2': {'min': 5 , 'max': None},
+    'geometry': ['polygon', 'linear'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 0.5, 'max': 1.5},
+    'groundwater_separation_required_m': {'min': 0.5}, 
+    'soil_type': ['sand', 'loam'],
+    'maintenance_required': 'low',
+    'pedestrians': True, 
+    'adaptive_siting': True, 
+    'design_adaptations': {
+        'clay_soil': ['install underdrain or outflow pipe']
+        }
+    },
 
-#                      RP0   PP1   PP2   WS3   IC4   RB5   GR6    UT7   UT8    RG9   PA10   FG11
-'retention_capacity': [0.75, 0.15, 0.15, 1.3,  0.6,  1.0,  0.05,  0.05,  0.03, 0.4,  0.3,  0.0],
-'cooling_ability':    [1.5,  1.5,  1.5,  2.0,  0.0,  0.0,  2.0,   8.0,  5.0,   2.5,  3.0,  0.0],
-'CAPEX':              [150,  120,  120,  250,  400,  500,  150,   500,  1000,  100,  100,  300],
-'OPEX':               [10,     5,    5,   15,   2,     5,    5,    20,   30,    3,    5,    10],
+'rain garden': {
+    'lulc' : ['ground'],
+    'function': ['infiltration', 'retention', 'vegetation'],
+    'area_m2': {'min': 5 , 'max': 200},
+    'geometry': ['polygon'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 0.5, 'max': 1},
+    'groundwater_separation_required_m': {'min': 0.5},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'moderate',
+    'pedestrians': True,
+    'adaptive_siting': True, 
+    'design_adaptations': {
+        'over_slope': ['install berms or use terracing'],    
+    'vegetation_type': ['shrubs', 'perennials', 'grasses']
+        }
+    },
 
-'min_area':           [500,    1,    1,    100,   1,  1,    5,     25,   10,    5,   100,  -999],
-'max_area':           [20000, 5000, 5000, 10000,  0,  5,  10000,    0,   0,   200,    0,   -999],
-# currently limiting to 5 rain barrels regardless of area
+'infiltration basin':{
+    'lulc' : ['ground'],
+    'function': ['infiltration', 'vegetation'],
+    'area_m2': {'min': 50 , 'max': 1000},
+    'geometry': ['polygon', 'concave'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.5, 'max': 3},
+    'groundwater_separation_required_m': {'min': 1},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'clay_soil': ['install underdrain or outflow pipe'],
+        'vegetation': ['grass', 'wet meadow', 'shrubs']
+        }
+    },
 
-'pub/priv':           [1, 1, 1, 1, 1, -999, 0, 1, 1, 1, 1, -999],
-'cent/de-cent':       [1, 1, 1, 1, 0, -999, 0, 0, 0, 0, 1, -999]
+'infiltration well':{
+    'lulc' : ['ground'],
+    'function': ['infiltration'],
+    'area_m2': {'min': 1, 'max': None},
+    'geometry': ['point'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 1, 'max': 4},
+    'groundwater_separation_required_m': {'min': 1 },
+    'soil_type': ['sand', 'loam'],
+    'maintenance_required': 'low',
+    'pedestrians': True
+    },
+
+'infiltration trench':{
+    'lulc' : ['ground'],
+    'function': ['infiltration'],
+    'area_m2': {'min': 1, 'max': 200},
+    'geometry': ['linear', 'concave'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.5, 'max': 2},
+    'groundwater_separation_required_m': {'min': 1},
+    'soil_type': ['sand', 'loam'],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': False
+    },
+
+'swale':{
+    'lulc' : ['ground'],
+    'function': ['infiltration', 'conveyance', 'vegetation'],
+    'area_m2': {'min': 10, 'max': 1000},
+    'geometry': ['linear', 'concave'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.3, 'max': 2},
+    'groundwater_separation_required_m': {'min': 1},
+    'soil_type': ['sand', 'loam'],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': False,
+    'design_adaptations': {
+        'vegetation': ['grass', 'perennials']
+        }
+},
+
+'channel':{
+    'lulc' : ['ground'],
+    'function': ['conveyance'],
+    'area_m2': {'min': 1, 'max': 1000},
+    'geometry': ['linear', 'concave'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.3, 'max': 2},
+    'groundwater_separation_required_m': {'min': 0.5},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': True
+    },
+
+'dry pond':{
+    'lulc' : ['ground'],
+    'function': ['retention', 'vegetation'],
+    'area_m2': {'min': 100, 'max': 5000},
+    'geometry': ['polygon', 'concave'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 1, 'max': 3},
+    'groundwater_separation_required_m': {'min': 1},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'clay_soil': ['install liner and outflow pipe'],
+        'vegetation': ['grass', 'wetland'], 
+        'recommended': ['sediment forebay, emergency bypass']
+        }
+    },
+
+'wet pond':{
+    'lulc' : ['ground'],
+    'function': ['retention', 'vegetation'],
+    'area_m2': {'min': 100, 'max': 5000},
+    'geometry': ['polygon', 'concave'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 1, 'max': 3},
+    'groundwater_separation_required_m': {'min': 1},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'clay_soil': ['install liner and outflow pipe'], 
+        'vegetation': ['semi-aquatic', 'wetland'],
+        'recommended': ['sediment forebay, trash rack, emergency bypass']
+        }
+    },
+
+'water square':{
+    'lulc' : ['ground'],
+    'function': ['retention'],
+    'area_m2': {'min': 100, 'max': 5000},
+    'geometry': ['polygon'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.1, 'max': 0.5},
+    'groundwater_separation_required_m': {'min': 0.5},
+    'soil_type': ['any'],
+    'maintenance_required': 'moderate',
+    'pedestrians': True,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'over_slope': 'can engineer a structure somehow',
+        'depth note': 'probably some safety measure?'
+        }
+    },
+
+'wetland':{
+    'lulc' : ['ground'],
+    'function': ['retention', 'infiltration', 'vegetation'],
+    'area_m2': {'min': 500, 'max': 5000},
+    'geometry': ['polygon'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.3, 'max': 1.5},
+    'groundwater_separation_required_m': {'min': 0.5},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'recommended': 'groundwater can be intersected IF BY DESIGN',
+        'vegetation': ['semi-aquatic', 'aquatic', 'wetland']
+        }
+    },
+
+'tree':{
+    'lulc' : ['ground', 'pavement'],
+    'function': ['vegetation'],
+    'area_m2': {'min': 5, 'max': 100},
+    'geometry': ['point'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 5, 'max': None},
+    'groundwater_separation_required_m': {'min': 0},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'low',
+    'pedestrians': True,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+
+'tree trench':{
+    'lulc' : ['ground', 'pavement'],
+    'function': ['vegetation', 'infiltration'],
+    'area_m2': {'min': 100, 'max': 1000},
+    'geometry': ['linear'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 5, 'max': None},
+    'groundwater_separation_required_m': {'min': 0},
+    'soil_type': ['sand', 'loam', 'silt'],
+    'maintenance_required': 'low',
+    'pedestrians': True,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+    
+
+'vegetation strip':{
+    'lulc' : ['ground', 'pavement'],
+    'function': ['infiltration', 'vegetation'],
+    'area_m2': {'min': 1, 'max': 500},
+    'geometry': ['linear'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min': 0.3, 'max': None},
+    'groundwater_separation_required_m': {'min': 1},
+    'soil_type': ['loam', 'sand'],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {
+        'over_slope': ['use check dam'],
+        'clay_soil': ['install underflow pipe']
+        }
+    },
+
+'park':{
+    'lulc' : ['ground'],
+    'function': ['retention', 'infiltration', 'vegetation'],
+    'area_m2': {'min': 100, 'max': None},
+    'geometry': ['polygon'],
+    'slope_cat': ['moderate'],
+    'depth_m': {'min':0.3, 'max': None},
+    'groundwater_separation_required_m': {'min': 0.5},
+    'soil_type': ['loam', 'sand'],
+    'maintenance_required': 'high',
+    'pedestrians': True,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+
+'forest': {
+    'lulc' : ['ground'],
+    'function': ['infiltration', 'retention', 'vegetation'],
+    'area_m2': {'min': 200, 'max': None},
+    'geometry': ['polygon'],
+    'slope_cat': ['steep'],
+    'depth_m': {'min': None, 'max': None},
+    'groundwater_separation_required_m': {'min':0.3},
+    'soil_type': ['sand', 'loam'],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+
+'green wall': {
+    'lulc' : ['building'],
+    'function': ['vegetation'],
+    'area_m2': {'min': 1, 'max': None},
+    'geometry': ['vertical', 'linear'],
+    'slope_cat': [None],
+    'depth_m': {'min': None, 'max': None},
+    'groundwater_separation_required_m': {'min': None},
+    'soil_type': ['engineered soil'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+
+
+'green roof': {
+    'lulc' : ['roof'],
+    'function': ['vegetation', 'retention'],
+    'area_m2': {'min': 1, 'max': None},
+    'geometry': ['polygon'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 0.1, 'max': 0.5},
+    'groundwater_separation_required_m': {'min': None},
+    'soil_type': ['engineerd soil'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+    
+'blue roof': {
+    'lulc' : ['roof'],
+    'function': ['retention'],
+    'area_m2': {'min': 1, 'max': None},
+    'geometry': ['polygon'],
+    'slope_cat': ['flat'],
+    'depth_m': {'min': 0, 'max': 0.15},
+    'groundwater_separation_required_m': {'min': None},
+    'soil_type': ['engineered soil'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+    
+'hybrid roof': {
+    'lulc' : ['roof'],
+    'function': ['retention', 'vegetation'],
+    'area_m2': {'min': 1, 'max': None},
+    'geometry': ['polygon'],
+    'slope_cat': ['gentle'],
+    'depth_m': {'min': 0, 'max': 0.5},
+    'groundwater_separation_required_m': {'min': None},
+    'soil_type': ['engineered soil'],
+    'maintenance_required': 'moderate',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    },
+
+'rain storage': {
+    'lulc' : ['building'],
+    'function': ['retention'],
+    'area_m2': {'min': 1, 'max': 500},
+    'geometry': ['point'],
+    'slope_cat': ['steep'],
+    'depth_m': {'min': 1, 'max': 5},
+    'groundwater_separation_required_m': {'min': None},
+    'soil_type': [None],
+    'maintenance_required': 'low',
+    'pedestrians': False,
+    'adaptive_siting': True,
+    'design_adaptations': {}
+    }
 }
-bgi_df = pd.DataFrame(bgi_characteristics)
 
-# LANDCOVER labels x FEASIBILITY
-landcover_feasibility = {
-#                 RP PP PP WS IC RB GR UT UT RG PA FG
-    'flat roof':  [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], 
-    'steep roof': [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-    'building':   [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], 
-    'facade':     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'road':       [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'parking':    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'forest':     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'grass':      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
-    'greenery':   [0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0],
-    'paved area': [0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0],
-    'half-paved': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'unpaved':    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'water':      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    'other':      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-}
-landcover_df = pd.DataFrame(landcover_feasibility)
 
-landcover_RC = [0.75, 0.75 ,0.75, 0.70, 0.70, 0.70, 0.10, 0.05, 0.10, 0.70, 0.55, 0.25, 0.00, 0.00]
+slope_categories_max_degree = {'flat': 2, 'gentle': 5, 'moderate': 10, 'steep': 15, 'very steep': 45}
+maintenance_categories = {'very low': 'almost never', 'low': '1 or 2x a year', 'moderate': 'monthly or less', 'high': 'weekly or more'}
