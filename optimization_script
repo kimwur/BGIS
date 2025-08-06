@@ -114,6 +114,10 @@ def save_result(gdf_result, weights, filename_prefix):
     gdf_result.to_file(filename, layer=layer, driver='GPKG')
     print(f"Saved to {filename}, layer '{layer}'")
 
-example_weights1 = {'retention': 2, 'temp': 1}
-solution_df = run_optimization(ex_weights)
-save_result(solution_df, {'retention': 2, 'temp': 1}, "opt_result")
+example1_weights = {'retention': 5, 'temp': 1}
+example2_weights = {'retention': 1, 'temp': 5}
+ex1_solution_df = run_optimization(example1_weights)
+ex2_solution_df = run_optimization(example2_weights)
+
+save_result(solution_df, {'retention': 5, 'temp': 1}, "opt_result")
+save_result(solution_df, {'retention': 1, 'temp': 5}, "opt_result")
