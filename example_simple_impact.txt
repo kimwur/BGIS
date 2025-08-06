@@ -1,3 +1,10 @@
+# retention is m depth per m2 area
+# RC is unitless runoff coefficient
+# cooling is of T Air in degrees C
+# capex is initial installation cost (euros)
+# opex is ongoing maintenance cost (euros per year)
+
+
 bgi_simple_impact = {
 'permeable pavement': {
     'retention': 0.1,
