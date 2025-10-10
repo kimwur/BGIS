@@ -1,4 +1,4 @@
-# packages to import
+######################                           PYTHON PACKAGES TO IMPORT
 import geopandas as gpd
 import pyogrio
 import pandas as pd
@@ -7,8 +7,13 @@ from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpStatus
 import ast
 import time
 
-# read text as words and not string
+######################                                READING FUNCTIONS
+
 def safe_literal_eval(val):
+''' 
+    read a string as 'string' and not as 
+    's', 't', 'r', 'i', 'n', 'g'
+'''
     if isinstance(val, str):
         try:
             return ast.literal_eval(val)
@@ -17,12 +22,15 @@ def safe_literal_eval(val):
     return val
 
 def load_bgi_database(filename):
+'''
+    need to swap out exec for something safer for users
+'''
     local_vars = {}
     with open(filename) as f:
         exec(f.read(), {}, local_vars)
     return local_vars
 
-# load information needed
+# load information needed and convert different classes within a category (ex LULC) to a matching dictionary
 BGI_CATALOG_FILE = 'example_bgi_database.txt'
 catalog_data = load_bgi_database(BGI_CATALOG_FILE)
 bgi_catalog = catalog_data['bgi_catalog']
@@ -41,6 +49,7 @@ LAYER_NAME = 'feasibility'
 gdf = gpd.read_file(GPKG_FILE, layer=LAYER_NAME, engine='pyogrio')
 gdf['suitable_bgis'] = gdf['suitable_bgis'].apply(safe_literal_eval)
 
+######################                                DEFINING MULTI-FUNCTIONAL INDEX 
 # pre-calculating median BGI performance
 retention_arr = np.array([b.get('retention', 0) or 0 for b in bgi_simple_impact.values()])
 median_retention = np.median(retention_arr[retention_arr>0])
@@ -48,18 +57,21 @@ median_retention = np.median(retention_arr[retention_arr>0])
 cooling_arr = np.array([b.get('cooling', 0) or 0 for b in bgi_simple_impact.values()])
 median_cooling = np.median(cooling_arr[cooling_arr>0])
 
-# pre-calculating max BGI application area
+######################                                        CALCULATING USEABLE AREA
+# this is the maximumm application area PER BGI. it is defined in the BGI database
 bgi_max_area = {
     bgi_name: bgi_catalog[bgi_name]['area_m2'].get('max', float('inf')) or float('inf')
     for bgi_name in bgi_simple_impact.keys()
 }
 
+# select the smallest out of: maximum BGI application area OR parcel area 
 area_cap = {
     (idx, bgi): min(gdf.at[idx, 'area'], bgi_max_area.get(bgi, float('inf')))
     for idx, row in gdf.iterrows()
     for bgi in row['suitable_bgis']
 }
 
+######################                                         OPTIMIZATION FUNCTION
 def run_optimization(weights, max_budget=None):
     start_time = time.time()
     mfi_scores = ( weights['retention'] * retention_arr / median_retention +
@@ -106,6 +118,7 @@ def run_optimization(weights, max_budget=None):
     print(mfi_dict)
     return gdf_result
 
+######################                                         SAVE RESULT FUNCTION 
 def save_result(gdf_result, weights):
     retention_w = weights['retention']
     temp_w = weights['temp']
@@ -114,6 +127,7 @@ def save_result(gdf_result, weights):
     gdf_result.to_file(filename, layer=layer, driver='GPKG')
     print(f"Saved to {filename}, layer '{layer}'")
 
+######################                                      WEIGHTS EXAMPLE STRUCTURE 
 example1_weights = {'retention': 5, 'temp': 1}
 example2_weights = {'retention': 1, 'temp': 5}
 
