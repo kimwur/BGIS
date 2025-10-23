@@ -1,19 +1,57 @@
-######################                           PYTHON PACKAGES TO IMPORT
+##### packages to import 
+!pip install pulp
 import geopandas as gpd
 import pyogrio
 import pandas as pd
+import ast
 import numpy as np
 from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpBinary, LpStatus
-import ast
 import time
 
-######################                                READING FUNCTIONS
+%run bgi_catalog.ipynb
+
+import ast
+import pandas as pd
+import geopandas as gpd
 
 def safe_literal_eval(val):
-''' 
-    read a string as 'string' and not as 
-    's', 't', 'r', 'i', 'n', 'g'
-'''
+    if isinstance(val, str):
+        try:
+            return ast.literal_eval(val)
+        except (ValueError, SyntaxError):
+            return val
+    return val
+
+def apply_safe_literal_eval(df, columns=None):
+    df_copy = df.copy()
+    
+    if columns is None:
+        # Select object columns (usually strings)
+        columns = df_copy.select_dtypes(include='object').columns.tolist()
+    
+    for col in columns:
+        df_copy[col] = df_copy[col].apply(safe_literal_eval)
+    
+    return df_copy
+
+def load_bgi_database(filename):
+    local_vars = {}
+    with open(filename) as f:
+        exec(f.read(), {}, local_vars)
+    return local_vars
+
+# load information needed and convert different classes within a category (ex LULC) to a matching dictionary
+##### packages to import 
+import geopandas as gpd
+import pyogrio
+import pandas as pd
+import ast
+
+%run bgi_catalog.ipynb
+%run simple_impact.ipynb
+
+##### for reading text per word instead of as string 
+def safe_literal_eval(val):
     if isinstance(val, str):
         try:
             return ast.literal_eval(val)
@@ -22,32 +60,21 @@ def safe_literal_eval(val):
     return val
 
 def load_bgi_database(filename):
-'''
-    need to swap out exec for something safer for users
-'''
     local_vars = {}
     with open(filename) as f:
         exec(f.read(), {}, local_vars)
     return local_vars
 
-# load information needed and convert different classes within a category (ex LULC) to a matching dictionary
-BGI_CATALOG_FILE = 'example_bgi_database.txt'
-catalog_data = load_bgi_database(BGI_CATALOG_FILE)
-bgi_catalog = catalog_data['bgi_catalog']
-slope_categories = catalog_data['slope_categories_max_degree']
-maintenance_categories = catalog_data['maintenance_categories']
-
-
-IMPACT_DATABASE_FILE = 'example_simple_impact.txt' 
-impact_catalog = load_bgi_database(IMPACT_DATABASE_FILE)
-bgi_simple_impact = impact_catalog['bgi_simple_impact']
-
-
-GPKG_FILE = 'FILENAME_HERE.gpkg'
-GPKG_LAYERS = pyogrio.list_layers(GPKG_FILE)
+# loading in the shapefile 
+# ENTER YOUR SHAPEFILE HERE
+GPKG_FILE='feasibility_results.gpkg'
+layers = pyogrio.list_layers(GPKG_FILE)
 LAYER_NAME = 'feasibility'
 gdf = gpd.read_file(GPKG_FILE, layer=LAYER_NAME, engine='pyogrio')
-gdf['suitable_bgis'] = gdf['suitable_bgis'].apply(safe_literal_eval)
+gdf = apply_safe_literal_eval(gdf)
+
+print(layers)
+print(gdf.head())
 
 ######################                                DEFINING MULTI-FUNCTIONAL INDEX 
 # pre-calculating median BGI performance
@@ -56,6 +83,13 @@ median_retention = np.median(retention_arr[retention_arr>0])
 
 cooling_arr = np.array([b.get('cooling', 0) or 0 for b in bgi_simple_impact.values()])
 median_cooling = np.median(cooling_arr[cooling_arr>0])
+
+# normalize variables
+variables = {}
+for idx, bgi in area_cap:
+    bgi_norm = bgi.lower().replace(' ', '_')
+    var_name = f"x_{idx}_{bgi_norm}"
+    variables[(idx, bgi_norm)] = LpVariable(var_name, cat='Binary')
 
 ######################                                        CALCULATING USEABLE AREA
 # this is the maximumm application area PER BGI. it is defined in the BGI database
@@ -66,7 +100,7 @@ bgi_max_area = {
 
 # select the smallest out of: maximum BGI application area OR parcel area 
 area_cap = {
-    (idx, bgi): min(gdf.at[idx, 'area'], bgi_max_area.get(bgi, float('inf')))
+    (idx, bgi): min(gdf.at[idx, 'area m2'], bgi_max_area.get(bgi, float('inf')))
     for idx, row in gdf.iterrows()
     for bgi in row['suitable_bgis']
 }
@@ -136,3 +170,4 @@ ex2_solution_df = run_optimization(example2_weights)
 
 save_result(ex1_solution_df, {'retention': 5, 'temp': 1})
 save_result(ex2_solution_df, {'retention': 1, 'temp': 5})
+
