@@ -4,6 +4,8 @@ import pyogrio
 import pandas as pd
 import ast
 
+%run bgi_catalog.ipynb
+
 ##### for reading text per word instead of as string 
 def safe_literal_eval(val):
     if isinstance(val, str):
@@ -19,70 +21,46 @@ def load_bgi_database(filename):
         exec(f.read(), {}, local_vars)
     return local_vars
 
-# load in BGI database 
-BGI_CATALOG_FILE = 'example_bgi_database.txt'
-catalog_data = load_bgi_database(BGI_CATALOG_FILE)
-bgi_catalog = catalog_data['bgi_catalog']
-slope_categories = catalog_data['slope_categories_max_degree']
-maintenance_categories = catalog_data['maintenance_categories']
-
 # loading in the shapefile 
 # ENTER YOUR SHAPEFILE HERE
-GPKG_FILE='shapefile.gpkg'
-LAYER_NAME = 'feasibility'
+GPKG_FILE='example_urban_landcover.gpkg'
+layers = pyogrio.list_layers(GPKG_FILE)
+LAYER_NAME = 'depijp'
 gdf = gpd.read_file(GPKG_FILE, layer=LAYER_NAME, engine='pyogrio')
 
-# mapping dictionaries so landcover input matches BGI catalog
-land_slopes_dictionary = { 'nearly level': 1,
-                           'very gentle slope': 2.5, 
-                           'gentle slope': 5, 
-                           'moderate slope': 10, 
-                           'strong slope': 15,
-                           'very strong slope': 20,
-                           'steep slope': 30,
-                           'very steep slope': 45,  
-                           'extreme slope': 90}
+print(layers)
+print(gdf.head())
 
-gdf['slope degree'] = gdf['slope'].map(land_slopes_dictionary)
-
-
+# map DATA class to the layers used by BGIs catalog
 landcover_dictionary = { 
-    'other': 'none',
-    'flat roof': 'roof',
-    'water': 'none',
-    'building': 'building',
-    'steep roof': 'none',
-    'road': 'pavement',
-    'parking': 'pavement',
-    'paved area': 'pavement',
-    'half-paved area': 'ground',
-    'unpaved area': 'ground',
-    'greenery': 'ground',
+    'flat roof': 'flat roof',
     'grass': 'ground',
-    'forest': 'none'
+    'other': 'none',
+    'pavement': 'pavement', 
+    'point roof': 'none',
+    'road': 'pavement',
+    'tree': 'ground',
+    'water': 'none',
 }
 
-gdf['basic_lulc'] = gdf['landcover'].map(landcover_dictionary)
-
-# feasibility check
+gdf['basic_lulc'] = gdf['Class'].str.lower().map(landcover_dictionary)
 
 def feasibility(land_data_file):
     suitable_bgis = [[] for _ in range(len(land_data_file))]
 
-    cell_lulc = land_data_file['basic_lulc']
-    cell_slope = land_data_file['slope degree'].copy()
-    cell_area = land_data_file['area']
-    cell_slope[cell_lulc == 'roof'] = land_slopes_dictionary['nearly level']
+    # Normalize landcover
+    cell_lulc = land_data_file['Class'].astype(str).str.strip().str.lower()
+    cell_area = pd.to_numeric(land_data_file['area m2'], errors='coerce').fillna(0)
 
     for bgi_name, bgi in bgi_catalog.items():
-        mask_lulc = cell_lulc.isin(bgi['lulc'])
-        slope_cat = bgi.get('slope_cat')[0]
-        max_bgi_slope_degree = slope_categories.get(slope_cat, float('inf'))
-        mask_slope = cell_slope <= max_bgi_slope_degree
-        min_bgi_area = bgi['area_m2'].get('min', 0)
-        mask_area = (cell_area >= min_bgi_area)
+        # Normalize BGI LULC
+        bgi_lulc = [x.lower() for x in bgi['lulc']]
 
-        mask = mask_lulc & mask_slope & mask_area
+        mask_lulc = cell_lulc.isin(bgi_lulc)
+        min_bgi_area = bgi['area_m2'].get('min', 0)
+        mask_area = cell_area >= min_bgi_area
+
+        mask = mask_lulc & mask_area
 
         for idx in mask[mask].index:
             suitable_bgis[idx].append(bgi_name)
@@ -92,6 +70,8 @@ def feasibility(land_data_file):
 
 # run function
 feasibility_gdf = feasibility(gdf)
+feasibility_gdf
+
 
 # add binary matrix
 bgi_binary = pd.DataFrame(0, index=feasibility_gdf.index, columns = list(bgi_catalog.keys()))
