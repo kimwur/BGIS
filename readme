@@ -19,3 +19,5 @@ Contents of repository
 
 3. "feasibility_script.py"
 --- python code to run feasibility operations. requires both a bgi catalog in excel format and land use/land cover data in a shapefile format. once run, it creates and saves a new shapefile with results contained in it. 
+
+for questions and comments, please contact kim.wang@wur.nl 
