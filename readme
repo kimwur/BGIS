@@ -1,0 +1,21 @@
+Contents of repository 
+
+1. "bgi_catalog_v1.xlsx" 
+--- an Excel sheet with 9 types of BGIs along with some of their characteristics. some characteristics are used to find feasibility/site selection per BGI. some of these characteristics are unused at the moment but will be incorporated in future versions. 
+     - infiltration crate: crates installed under roads and surfaces for the purpose of storing excess stormwater.
+     - permeable pavement: types of pavement with more open pore spaces to increase infiltration rate from rainwater into the ground.
+     - rain garden: a garden within a depression expressly designed for collecting rainwater.
+     - blue roof: rooftop designed to temporarily contain stormwater 
+     - green roof: rooftop that includes layers of soil capable of hosting a layer of vegetation 
+     - tree: a tree with a border of soil, may be in a pit or box or be directly in soil. 
+     - park: a green space meant to be used for recreation with a mix of plants, grass, and surface materials
+     - rain storage: any container that stores rainwater. this may be a barrel, a box, and can be placed above or below ground. 
+     - biohaven: modular floating islands with plants chosen to boost biodiversity, improve water quality, improve aesthetics, or other purposes
+
+2. "example_amsterdam_neighborhood.gpkg"
+--- a geopackage of a small, incomplete block of Amsterdam given as an example of what input data should contain. Data is taken from data.amsterdam.nl and maps.amsterdam.nl 
+--- The shapefile is a compilation of layers from the "BGT" (Basisregistratie grootschalige topografie) and the flat roof dataset from daktype 3DBAG. 
+--- this is ready to be used directly with the feasibility script given. 
+
+3. "feasibility_script.py"
+--- python code to run feasibility operations. requires both a bgi catalog in excel format and land use/land cover data in a shapefile format. once run, it creates and saves a new shapefile with results contained in it. 
